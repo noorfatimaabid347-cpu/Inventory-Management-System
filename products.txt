@@ -1,0 +1,3 @@
+103|earphones|90|100
+104|laptop|90000|5
+105|keyboard|100|20

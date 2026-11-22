@@ -1,0 +1,776 @@
+
+#include <iostream>
+#include <string>
+#include <limits>
+#include <algorithm>
+#include <fstream>
+using namespace std;
+
+
+class Product {
+
+private:
+    int id;
+    string name;
+    double price;
+    int quantity;
+
+    Product* next;
+
+    friend class Inventory;
+    friend class TransactionManager;
+
+public:
+
+    
+    Product(int i, string n, double p, int q) {
+        id = i;
+        name = n;
+        price = p;
+        quantity = q;
+        next = NULL;
+    }
+
+    
+    int getID() {
+        return id;
+    }
+
+    string getName() {
+        return name;
+    }
+
+    double getPrice() {
+        return price;
+    }
+
+    int getQuantity() {
+        return quantity;
+    }
+};
+
+
+class Inventory {
+
+private:
+
+    Product* head;
+    friend class TransactionManager;
+
+    // Internal searching function
+    Product* findByID(int id) {
+
+        Product* p = head;
+
+        while (p != NULL) {
+
+            if (p->id == id) {
+                return p;
+            }
+
+            p = p->next;
+        }
+
+        return NULL;
+    }
+
+public:
+
+    // Constructor
+    Inventory() {
+        head = NULL;
+    }
+
+    // Destructor
+    ~Inventory() {
+
+        while (head != NULL) {
+
+            Product* temp = head;
+            head = head->next;
+
+            delete temp;
+        }
+    }
+
+    void addProduct();
+    void displayProducts();
+    void searchProduct();
+    void updateProduct();
+    void deleteProduct();
+    void sortProducts();
+    void sortByName();
+    void sortByQuantity();
+    void saveProducts();
+	void loadProducts();
+	void lowStockReport();
+};
+
+void Inventory::addProduct() {
+
+    int id, quantity;
+    string name;
+    double price;
+
+    cout << "\nEnter Product ID: ";
+    cin >> id;
+
+    // Check for duplicate ID
+    if (findByID(id) != NULL) {
+        cout << "Product ID already exists!\n";
+        return;
+    }
+
+    cin.ignore(numeric_limits<streamsize>::max(), '\n');
+
+    cout << "Enter Product Name: ";
+    getline(cin, name);
+
+    cout << "Enter Product Price: ";
+    cin >> price;
+
+    cout << "Enter Product Quantity: ";
+    cin >> quantity;
+
+    // Validate information
+    if (id <= 0 || price < 0 || quantity < 0) {
+        cout << "Invalid product information!\n";
+        return;
+    }
+
+    // Create a new node
+    Product* temp = new Product(id, name, price, quantity);
+
+    // Insert at the end
+    if (head == NULL) {
+        head = temp;
+    }
+
+    else {
+
+        Product* p = head;
+
+        while (p->next != NULL) {
+            p = p->next;
+        }
+
+        p->next = temp;
+    }
+
+    cout << "\nProduct added successfully!\n";
+}
+
+void Inventory::displayProducts() {
+
+    if (head == NULL) {
+        cout << "\nInventory is empty!\n";
+        return;
+    }
+
+    Product* p = head;
+
+    cout << "\n========== PRODUCT INVENTORY ==========\n";
+
+    while (p != NULL) {
+
+        cout << "\nProduct ID: " << p->id;
+        cout << "\nName: " << p->name;
+        cout << "\nPrice: " << p->price;
+        cout << "\nQuantity: " << p->quantity;
+
+        cout << "\n---------------------------------------\n";
+
+        p = p->next;
+    }
+}
+
+void Inventory::searchProduct() {
+
+    int id;
+
+    cout << "\nEnter Product ID to search: ";
+    cin >> id;
+
+    Product* result = findByID(id);
+
+    if (result == NULL) {
+        cout << "\nProduct not found!\n";
+    }
+
+    else {
+
+        cout << "\nProduct Found!\n";
+
+        cout << "ID: " << result->id << endl;
+        cout << "Name: " << result->name << endl;
+        cout << "Price: " << result->price << endl;
+        cout << "Quantity: " << result->quantity << endl;
+    }
+}
+
+void Inventory::updateProduct() {
+    int id, quantity;
+    double price;
+
+    cout << "\nEnter Product ID to update: ";
+    cin >> id;
+
+    Product* p = findByID(id);
+
+    if (p == NULL) {
+        cout << "\nProduct not found!\n";
+        return;
+    }
+
+    cout << "Enter new price: ";
+    cin >> price;
+
+    cout << "Enter new quantity: ";
+    cin >> quantity;
+
+    if (price < 0 || quantity < 0) {
+        cout << "\nInvalid information!\n";
+        return;
+    }
+
+    p->price = price;
+    p->quantity = quantity;
+
+    cout << "\nProduct updated successfully!\n";
+}
+
+void Inventory::deleteProduct() {
+    int id;
+
+    cout << "\nEnter Product ID to delete: ";
+    cin >> id;
+
+    Product* p = head;
+    Product* previous = NULL;
+
+    // Search for the product
+    while (p != NULL && p->id != id) {
+        previous = p;
+        p = p->next;
+    }
+
+    // Product not found
+    if (p == NULL) {
+        cout << "\nProduct not found!\n";
+        return;
+    }
+
+    // If deleting the first node
+    if (previous == NULL) {
+        head = p->next;
+    }
+    else {
+        previous->next = p->next;
+    }
+
+    delete p;
+
+    cout << "\nProduct deleted successfully!\n";
+}
+void Inventory::sortProducts() {
+
+    if (head == NULL || head->next == NULL) {
+        cout << "\nNot enough products to sort!\n";
+        return;
+    }
+
+    bool swapped;
+
+    do {
+        swapped = false;
+
+        Product* p = head;
+
+        while (p->next != NULL) {
+
+            if (p->id > p->next->id) {
+
+                swap(p->id, p->next->id);
+                swap(p->name, p->next->name);
+                swap(p->price, p->next->price);
+                swap(p->quantity, p->next->quantity);
+
+                swapped = true;
+            }
+
+            p = p->next;
+        }
+
+    } while (swapped);
+
+    cout << "\nProducts sorted successfully!\n";
+}
+
+void Inventory::sortByName() {
+
+    if (head == NULL || head->next == NULL) {
+        cout << "\nNot enough products to sort!\n";
+        return;
+    }
+
+    bool swapped;
+
+    do {
+        swapped = false;
+
+        Product* p = head;
+
+        while (p->next != NULL) {
+
+            if (p->name > p->next->name) {
+
+                swap(p->id, p->next->id);
+                swap(p->name, p->next->name);
+                swap(p->price, p->next->price);
+                swap(p->quantity, p->next->quantity);
+
+                swapped = true;
+            }
+
+            p = p->next;
+        }
+
+    } while (swapped);
+
+    cout << "\nProducts sorted by name successfully!\n";
+}
+
+void Inventory::sortByQuantity() {
+
+    if (head == NULL || head->next == NULL) {
+        cout << "\nNot enough products to sort!\n";
+        return;
+    }
+
+    bool swapped;
+
+    do {
+        swapped = false;
+
+        Product* p = head;
+
+        while (p->next != NULL) {
+
+            if (p->quantity > p->next->quantity) {
+
+                swap(p->id, p->next->id);
+                swap(p->name, p->next->name);
+                swap(p->price, p->next->price);
+                swap(p->quantity, p->next->quantity);
+
+                swapped = true;
+            }
+
+            p = p->next;
+        }
+
+    } while (swapped);
+
+    cout << "\nProducts sorted by quantity successfully!\n";
+}
+void Inventory::saveProducts() {
+
+    ofstream file("products.txt");
+
+    if (!file) {
+        cout << "Error opening products file!\n";
+        return;
+    }
+
+    Product* p = head;
+
+    while (p != NULL) {
+
+        file << p->id << "|"
+             << p->name << "|"
+             << p->price << "|"
+             << p->quantity << endl;
+
+        p = p->next;
+    }
+
+    file.close();
+
+    cout << "Products saved successfully!\n";
+}
+void Inventory::loadProducts() {
+
+    ifstream file("products.txt");
+
+    if (!file) {
+        return;
+    }
+
+    while (true) {
+
+        int id, quantity;
+        double price;
+        string name;
+
+        if (!(file >> id)) {
+            break;
+        }
+
+        file.ignore(1, '|');
+        getline(file, name, '|');
+
+        file >> price;
+        file.ignore(1, '|');
+
+        file >> quantity;
+        file.ignore(numeric_limits<streamsize>::max(), '\n');
+
+        Product* newNode = new Product(id, name, price, quantity);
+
+        if (head == NULL) {
+            head = newNode;
+        }
+        else {
+            Product* p = head;
+
+            while (p->next != NULL) {
+                p = p->next;
+            }
+
+            p->next = newNode;
+        }
+    }
+
+    file.close();
+
+}
+void Inventory::lowStockReport() {
+    Product* p = head;
+    bool found = false;
+
+    cout << "\n===== LOW STOCK REPORT =====\n";
+
+    while (p != NULL) {
+        if (p->quantity <= 5) {
+            cout << "\nProduct ID: " << p->id;
+            cout << "\nName: " << p->name;
+            cout << "\nQuantity: " << p->quantity << endl;
+
+            found = true;
+        }
+
+        p = p->next;
+    }
+
+    if (found == false) {
+        cout << "\nNo low-stock products found!\n";
+    }
+}
+
+class Transaction {
+private:
+    int productID;
+    string type;
+    int quantity;
+    Transaction* next;
+
+    friend class TransactionManager;
+
+public:
+    Transaction(int id, string t, int q) {
+        productID = id;
+        type = t;
+        quantity = q;
+        next = NULL;
+    }
+};
+
+class TransactionManager {
+private:
+    Transaction* head;
+
+public:
+    TransactionManager() {
+        head = NULL;
+    }
+
+    ~TransactionManager() {
+        while (head != NULL) {
+            Transaction* temp = head;
+            head = head->next;
+            delete temp;
+        }
+    }
+
+    void stockIn(Inventory& store);
+    void stockOut(Inventory& store);
+    void displayTransactions();
+    void saveTransactions();
+	void loadTransactions();
+};
+
+void TransactionManager::stockIn(Inventory& store) {
+
+    int id, qty;
+
+    cout << "\nEnter Product ID: ";
+    cin >> id;
+
+    Product* p = store.findByID(id);
+
+    if (p == NULL) {
+        cout << "\nProduct not found!\n";
+        return;
+    }
+
+    cout << "Enter quantity to add: ";
+    cin >> qty;
+
+    if (qty <= 0) {
+        cout << "\nQuantity must be greater than zero!\n";
+        return;
+    }
+
+    p->quantity += qty;
+
+    Transaction* temp = new Transaction(id, "IN", qty);
+
+    if (head == NULL) {
+        head = temp;
+    }
+    else {
+        Transaction* t = head;
+
+        while (t->next != NULL) {
+            t = t->next;
+        }
+
+        t->next = temp;
+    }
+
+    cout << "\nStock added successfully!\n";
+}
+
+void TransactionManager::stockOut(Inventory& store) {
+
+    int id, qty;
+
+    cout << "\nEnter Product ID: ";
+    cin >> id;
+
+    Product* p = store.findByID(id);
+
+    if (p == NULL) {
+        cout << "\nProduct not found!\n";
+        return;
+    }
+
+    cout << "Enter quantity to remove: ";
+    cin >> qty;
+
+    if (qty <= 0) {
+        cout << "\nQuantity must be greater than zero!\n";
+        return;
+    }
+
+    if (qty > p->quantity) {
+        cout << "\nInsufficient stock!\n";
+        return;
+    }
+
+    p->quantity -= qty;
+
+    Transaction* temp = new Transaction(id, "OUT", qty);
+
+    if (head == NULL) {
+        head = temp;
+    }
+    else {
+        Transaction* t = head;
+
+        while (t->next != NULL) {
+            t = t->next;
+        }
+
+        t->next = temp;
+    }
+
+    cout << "\nStock removed successfully!\n";
+}
+
+void TransactionManager::displayTransactions() {
+
+    if (head == NULL) {
+        cout << "\nNo transactions available!\n";
+        return;
+    }
+
+    Transaction* t = head;
+
+    cout << "\n========== TRANSACTION HISTORY ==========\n";
+
+    while (t != NULL) {
+
+        cout << "\nProduct ID: " << t->productID;
+        cout << "\nTransaction Type: " << t->type;
+        cout << "\nQuantity: " << t->quantity;
+        cout << "\n-----------------------------------------";
+
+        t = t->next;
+    }
+}
+void TransactionManager::saveTransactions() {
+    ofstream file("transactions.txt");
+
+    if (!file) {
+        cout << "Error opening transactions file!\n";
+        return;
+    }
+
+    Transaction* p = head;
+
+    while (p != NULL) {
+
+        file << p->productID << "|"
+             << p->type << "|"
+             << p->quantity << endl;
+
+        p = p->next;
+    }
+
+    file.close();
+
+    cout << "Transactions saved successfully!\n";
+}
+void TransactionManager::loadTransactions() {
+
+    ifstream file("transactions.txt");
+
+    if (!file) {
+        return;
+    }
+
+    while (true) {
+
+        int id, quantity;
+        string type;
+
+        if (!(file >> id)) {
+            break;
+        }
+
+        file.ignore(1, '|');
+        getline(file, type, '|');
+
+        file >> quantity;
+        file.ignore(numeric_limits<streamsize>::max(), '\n');
+
+        Transaction* newNode = new Transaction(id, type, quantity);
+
+        if (head == NULL) {
+            head = newNode;
+        }
+        else {
+            Transaction* p = head;
+
+            while (p->next != NULL) {
+                p = p->next;
+            }
+
+            p->next = newNode;
+        }
+    }
+
+    file.close();
+}
+
+
+int main() {
+
+    Inventory store;
+    TransactionManager transactions;
+    store.loadProducts();
+    transactions.loadTransactions();
+
+    int choice;
+
+    do {
+
+        cout << "\n===== INVENTORY MANAGEMENT SYSTEM =====\n";
+
+        cout << "1. Add Product\n";
+        cout << "2. Display Products\n";
+        cout << "3. Search Product\n";
+        cout << "4. Update Product\n";
+        cout << "5. Delete Product\n";
+        cout << "6. Sort Products by ID\n";
+        cout << "7. Sort Products by Name\n";
+		cout << "8. Sort Products by Quantity\n";
+		cout << "9. Stock In\n";
+		cout << "10. Stock Out\n";
+		cout << "11. Display Transaction History\n";
+		cout << "12. Low Stock Report\n";
+        cout << "0. Exit\n";
+
+        cout << "\nEnter your choice: ";
+        cin >> choice;
+
+        switch (choice) {
+
+            case 1:
+                store.addProduct();
+                break;
+
+            case 2:
+                store.displayProducts();
+                break;
+
+            case 3:
+                store.searchProduct();
+                break;
+            case 4:
+    			store.updateProduct();
+    			break;
+			case 5:
+    			store.deleteProduct();
+    			break;
+    		case 6:
+    			store.sortProducts();
+    			break;
+    		case 7:
+    			store.sortByName();
+    			break;
+
+			case 8:
+    			store.sortByQuantity();
+    			break;
+    			
+    		case 9:
+    			transactions.stockIn(store);
+    			break;
+
+			case 10:
+    			transactions.stockOut(store);
+    			break;
+
+			case 11:
+    			transactions.displayTransactions();
+    			break;
+    		case 12:
+    			store.lowStockReport();
+    			break;
+            case 0:
+                cout << "\nExiting application...\n";
+                break;
+
+            default:
+                cout << "\nInvalid choice!\n";
+        }
+
+    } while (choice != 0);
+    store.saveProducts();
+	transactions.saveTransactions();
+
+    return 0;
+}
+
